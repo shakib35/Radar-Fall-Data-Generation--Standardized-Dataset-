@@ -14,15 +14,15 @@ from PIL import Image
 # 1) CONFIGURATION
 # -----------------------
 DATA_DIR      = r"C:\Users\squddus\Documents\Radar Fall Data Generation (Standardized Dataset)\IEEE Radar Dataset\dataset\fall"
-# Save model checkpoint in the same 'fall' folder
-SAVE_MODEL    = os.path.join(DATA_DIR, "fall_ddpm_unet.pt")
+# Save model checkpoint to specified directory
+SAVE_MODEL    = r"C:\Users\squddus\Documents\Radar-Fall-Data-Generation--Standardized-Dataset-\fall_ddpm_unet.pt"
 DEVICE        = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 BATCH_SIZE    = 16
 IMAGE_SIZE    = 128                # adjust to your spectrogram resolution
 CHANNELS      = 1                  # grayscale
-LR            = 2e-4
-EPOCHS        = 50
+LR            = 1e-4
+EPOCHS        = 500
 
 # Diffusion hyperparameters
 TIMESTEPS     = 1000
@@ -32,7 +32,7 @@ BETA_END      = 0.02
 # -----------------------
 # 2) DATASET DEFINITION
 # -----------------------
-# Use top-level function for scaling to avoid pickle issues
+# Top-level scaling helper to avoid pickle issues
 def scale_to_neg1_pos1(tensor):
     return tensor * 2 - 1
 

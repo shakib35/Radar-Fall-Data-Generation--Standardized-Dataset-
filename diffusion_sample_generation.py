@@ -10,7 +10,7 @@ from tqdm import tqdm
 # -----------------------
 # 1) CONFIGURATION
 # -----------------------
-MODEL_DIR   = r"C:\Users\squddus\Documents\Radar Fall Data Generation (Standardized Dataset)"
+MODEL_DIR   = r"C:\Users\squddus\Documents\Radar-Fall-Data-Generation--Standardized-Dataset-"
 MODEL_PATH  = os.path.join(MODEL_DIR, "fall_ddpm_unet.pt")
 OUTPUT_DIR  = os.path.join(MODEL_DIR, "generated_samples")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -24,6 +24,10 @@ TIMESTEPS   = 1000
 # 2) UNet ARCHITECTURE
 #    (should match your training script)
 # -----------------------
+import torch
+from torchvision import transforms
+from PIL import Image
+
 def conv_block(in_ch, out_ch):
     return nn.Sequential(
         nn.Conv2d(in_ch, out_ch, 3, padding=1),
@@ -78,17 +82,14 @@ betas     = torch.linspace(1e-4, 0.02, TIMESTEPS).to(DEVICE)
 alphas    = 1.0 - betas
 alpha_cum = torch.cumprod(alphas, dim=0)
 
-# one ancestral sampling step
 @torch.no_grad()
 def p_sample(model, x_t, t):
     beta_t = betas[t]
     sqrt_alpha = torch.sqrt(alphas[t])
     sqrt_one_minus_ac = torch.sqrt(1 - alpha_cum[t])
 
-    # predict noise
     eps_pred = model(x_t, t.repeat(x_t.size(0)))
 
-    # compute mean of posterior
     mean = (1 / sqrt_alpha) * (x_t - (beta_t / sqrt_one_minus_ac) * eps_pred)
 
     if t > 0:
@@ -100,30 +101,30 @@ def p_sample(model, x_t, t):
 
 @torch.no_grad()
 def sample_loop(model, shape):
-    # start from pure noise
     x = torch.randn(shape, device=DEVICE)
     for t in tqdm(reversed(range(TIMESTEPS)), desc="Sampling"):
         x = p_sample(model, x, torch.tensor([t], device=DEVICE))
     return x
 
+# -----------------------
+# 4) MAIN GENERATION
+# -----------------------
 def main():
-    # load model
     model = UNet(c_in=CHANNELS).to(DEVICE)
     model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
     model.eval()
 
-    # generate a batch of samples
-    n_samples = 16
-    sampled = sample_loop(model, (n_samples, CHANNELS, IMAGE_SIZE, IMAGE_SIZE))
+    n_samples = 200
+    samples = sample_loop(model, (n_samples, CHANNELS, IMAGE_SIZE, IMAGE_SIZE))
+    # rescale [-1,1] => [0,1]
+    samples = (samples + 1) / 2
 
-    # rescale from [-1,1] to [0,1]
-    sampled = (sampled + 1) / 2
-    sampled = sampled.clamp(0, 1)
+    # save each sample individually
+    for idx, img in enumerate(samples):
+        out_path = os.path.join(OUTPUT_DIR, f"sample_{idx+1}.png")
+        save_image(img, out_path)
 
-    # save as a single grid image
-    grid_path = os.path.join(OUTPUT_DIR, "fall_spectrograms.png")
-    save_image(sampled, grid_path, nrow=4)
-    print(f"Saved generated image grid to {grid_path}")
+    print(f"Saved {n_samples} generated images to {OUTPUT_DIR}")
 
 if __name__ == "__main__":
     main()
