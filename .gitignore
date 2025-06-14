@@ -1,0 +1,6 @@
+# Ignore Dataset files
+/generated_samples/
+
+/Original Data/
+
+/IEEE Radar Dataset/
