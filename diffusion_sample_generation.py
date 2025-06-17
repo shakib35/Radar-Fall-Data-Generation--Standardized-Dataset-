@@ -16,7 +16,7 @@ OUTPUT_DIR  = os.path.join(MODEL_DIR, "generated_samples")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 DEVICE      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-IMAGE_SIZE  = 128      # must match training
+IMAGE_SIZE  = 112      # must match training
 CHANNELS    = 1
 TIMESTEPS   = 1000
 
@@ -114,17 +114,31 @@ def main():
     model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
     model.eval()
 
-    n_samples = 200
-    samples = sample_loop(model, (n_samples, CHANNELS, IMAGE_SIZE, IMAGE_SIZE))
-    # rescale [-1,1] => [0,1]
-    samples = (samples + 1) / 2
+    n_samples   = 3000
+    batch_size  = 200   # or whatever your GPU can handle
+    IMAGE_SHAPE = (CHANNELS, IMAGE_SIZE, IMAGE_SIZE)
 
-    # save each sample individually
-    for idx, img in enumerate(samples):
-        out_path = os.path.join(OUTPUT_DIR, f"sample_{idx+1}.png")
-        save_image(img, out_path)
+    idx = 1
+    for start in range(0, n_samples, batch_size):
+        curr_batch = min(batch_size, n_samples - start)
+
+        # 1) generate a small batch of samples
+        samples = sample_loop(model, (curr_batch, *IMAGE_SHAPE))
+
+        # 2) rescale to [0,1]
+        samples = (samples + 1) / 2
+        samples = samples.clamp(0, 1)
+
+        # 3) save each image in this batch
+        for i, img in enumerate(samples):
+            out_path = os.path.join(OUTPUT_DIR, f"sample_{idx:04d}.png")
+            save_image(img, out_path)
+            idx += 1
+
+        # 4) free GPU memory
+        del samples
+        torch.cuda.empty_cache()
 
     print(f"Saved {n_samples} generated images to {OUTPUT_DIR}")
-
 if __name__ == "__main__":
     main()

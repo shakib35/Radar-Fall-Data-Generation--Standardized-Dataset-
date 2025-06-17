@@ -1,5 +1,6 @@
 # Ignore Dataset files
-/generated_samples/
+/Generated Fall Samples/
+/Generated ADL Samples/
 
 /Original Data/
 

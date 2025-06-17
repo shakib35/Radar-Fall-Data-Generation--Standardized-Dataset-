@@ -13,16 +13,16 @@ from PIL import Image
 # -----------------------
 # 1) CONFIGURATION
 # -----------------------
-DATA_DIR      = r"C:\Users\squddus\Documents\Radar Fall Data Generation (Standardized Dataset)\IEEE Radar Dataset\dataset\fall"
+DATA_DIR      = r"C:\Users\squddus\Documents\Radar-Fall-Data-Generation--Standardized-Dataset-\IEEE Radar Dataset\dataset\fall"
 # Save model checkpoint to specified directory
 SAVE_MODEL    = r"C:\Users\squddus\Documents\Radar-Fall-Data-Generation--Standardized-Dataset-\fall_ddpm_unet.pt"
 DEVICE        = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-BATCH_SIZE    = 16
-IMAGE_SIZE    = 128                # adjust to your spectrogram resolution
+BATCH_SIZE    = 64
+IMAGE_SIZE    = 112                # adjust to your spectrogram resolution
 CHANNELS      = 1                  # grayscale
 LR            = 1e-4
-EPOCHS        = 500
+EPOCHS        = 250
 
 # Diffusion hyperparameters
 TIMESTEPS     = 1000
