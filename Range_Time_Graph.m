@@ -1,7 +1,7 @@
 clear; clc; close all;
 
 %% Setup and Load Data
-recordLocation = "C:\Users\squddus\Documents\Radar Fall Data Generation (Standardized Dataset)\Original Data\Falls\forwardfallJN";
+recordLocation = "C:\Users\squddus\Documents\Radar-Fall-Data-Generation--Standardized-Dataset-\Original Data\Non-Fall\PreggoRstandJ";
 
 % Load the 4D radar data cube
 load(fullfile(recordLocation, "4DdataCube.mat"), "radarDataCube");
