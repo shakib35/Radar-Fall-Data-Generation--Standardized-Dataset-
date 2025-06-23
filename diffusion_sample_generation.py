@@ -10,7 +10,7 @@ from tqdm import tqdm
 # -----------------------
 # 1) CONFIGURATION
 # -----------------------
-MODEL_DIR   = r"C:\Users\squddus\Documents\Radar-Fall-Data-Generation--Standardized-Dataset-"
+MODEL_DIR   = r"C:\Users\squddus\Documents\Radar-Fall-Data-Generation--Standardized-Dataset-\Radar-Fall-Data-Generation--Standardized-Dataset-"
 MODEL_PATH  = os.path.join(MODEL_DIR, "fall_ddpm_unet.pt")
 OUTPUT_DIR  = os.path.join(MODEL_DIR, "generated_samples")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -114,8 +114,8 @@ def main():
     model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
     model.eval()
 
-    n_samples   = 3000
-    batch_size  = 200   # or whatever your GPU can handle
+    n_samples   = 11000
+    batch_size  = 500   # or whatever your GPU can handle
     IMAGE_SHAPE = (CHANNELS, IMAGE_SIZE, IMAGE_SIZE)
 
     idx = 1

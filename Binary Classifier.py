@@ -15,16 +15,17 @@ from PIL import Image
 # 1) CONFIGURATION
 # -----------------------
 # Absolute path to your dataset root (must contain 'Fall' and 'ADL' subfolders)
-DATA_DIR         = r"C:\Users\squddus\Documents\Radar-Fall-Data-Generation--Standardized-Dataset-\IEEE Radar Dataset\dataset"
-METRICS_FILE     = "metrics.txt"  # output metrics file
-# Where to save the trained model
-SAVE_MODEL_PATH  = os.path.join(DATA_DIR, "vgg16_fall_classifier.pt")
+DATA_DIR         = r"E:\BHI Paper Stuff\3000 Generated Samples"
+# Absolute path to save the trained model
+SAVE_MODEL_PATH  = r"E:\BHI Paper Stuff\Results\vgg16_fall_classifier_3000gen.pt"
+# Metrics output file (will be created in current working directory or absolute path if you change it)
+METRICS_FILE     = r"E:\BHI Paper Stuff\Results\vgg16_generated_metrics_3000gen.txt"
 
 # Hyperparameters
 BATCH_SIZE = 32
-EPOCHS     = 5
+EPOCHS     = 10
 LR         = 1e-4
-IMAGE_SIZE = 112  # all images will be resized to 112x112
+IMAGE_SIZE = 224  # resize all images to 112x112
 DEVICE     = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Reproducibility
@@ -35,7 +36,7 @@ torch.manual_seed(42)
 # 2) DATA TRANSFORMS
 # -----------------------
 transform = transforms.Compose([
-    transforms.Grayscale(num_output_channels=3),  # replicate to 3 channels
+    transforms.Grayscale(num_output_channels=3),  # replicate single-channel to 3
     transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -49,6 +50,8 @@ def train_and_evaluate():
     # Load dataset
     full_dataset = ImageFolder(DATA_DIR, transform=transform)
     class_names = full_dataset.classes
+
+    # Split train/validation
     total = len(full_dataset)
     val_size = int(0.2 * total)
     train_size = total - val_size
@@ -59,12 +62,12 @@ def train_and_evaluate():
     val_loader   = DataLoader(val_ds,   batch_size=BATCH_SIZE, shuffle=False,
                               num_workers=4, pin_memory=True)
 
-    # Prepare model
+    # Initialize pretrained VGG16
     model = vgg16(pretrained=True)
     # Freeze feature extractor
     for param in model.features.parameters():
         param.requires_grad = False
-    # Adapt classifier
+    # Replace final classifier layer
     in_features = model.classifier[6].in_features
     model.classifier[6] = nn.Linear(in_features, len(class_names))
     model = model.to(DEVICE)
@@ -72,7 +75,7 @@ def train_and_evaluate():
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=LR)
 
-    # Prepare metrics file
+    # Clear metrics file
     open(METRICS_FILE, 'w').close()
 
     # Training loop
@@ -91,17 +94,16 @@ def train_and_evaluate():
 
         # Validation
         model.eval()
-        all_preds = []
-        all_labels = []
+        all_preds, all_labels = [], []
         with torch.no_grad():
             for inputs, labels in val_loader:
                 inputs = inputs.to(DEVICE)
                 outputs = model(inputs)
                 _, preds = torch.max(outputs, 1)
-                all_preds.extend(preds.cpu().numpy())
-                all_labels.extend(labels.numpy())
+                all_preds.extend(preds.cpu().tolist())
+                all_labels.extend(labels.tolist())
 
-        # Metrics logging
+        # Collect metrics
         report = classification_report(all_labels, all_preds, target_names=class_names)
         cm = confusion_matrix(all_labels, all_preds)
         with open(METRICS_FILE, 'a') as f:
@@ -115,7 +117,8 @@ def train_and_evaluate():
 
         print(f"Epoch {epoch} complete. Loss: {epoch_loss:.4f}")
 
-    # Save final trained model
+    # Save the final trained model
+    os.makedirs(os.path.dirname(SAVE_MODEL_PATH), exist_ok=True)
     torch.save(model.state_dict(), SAVE_MODEL_PATH)
     print(f"Training complete. Model saved to {SAVE_MODEL_PATH}")
     print(f"Metrics saved to {METRICS_FILE}")
